@@ -1,0 +1,54 @@
+{
+  // Dev Container設定
+  // AI CLIツールの管理:
+  // - Claude Code: postCreateCommandでネイティブインストーラー使用（推奨方式）
+  // - Gemini CLI: postCreateCommandでnpm経由インストール
+  // - Codex CLI: postCreateCommandでnpm経由インストール
+  "name": "${localWorkspaceFolderBasename}",
+  "dockerComposeFile": [
+    "../docker-compose.yml"
+  ],
+  "service": "app",
+  "workspaceFolder": "/app",
+  "overrideCommand": true,
+  "shutdownAction": "stopCompose",
+  "containerUser": "root",
+  "remoteUser": "appuser",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ],
+      "settings": {
+        "editor.formatOnSave": true
+      }
+    }
+  },
+  // AI CLIツールの環境変数と設定ディレクトリ
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/appuser/.claude", // Claude Code認証情報
+    "CODEX_CONFIG_DIR": "/home/appuser/.codex", // Codex CLI認証情報
+    "GEMINI_CONFIG_DIR": "/home/appuser/.gemini", // Gemini CLI認証情報
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
+  },
+  "mounts": [
+    "source=claude-code-config,target=/home/appuser/.claude,type=volume",
+    "source=codex-config,target=/home/appuser/.codex,type=volume",
+    "source=gemini-config,target=/home/appuser/.gemini,type=volume"
+  ],
+  // Dev Container Features
+  // Node.jsはGemini CLI/Codex CLIのインストールに必要
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20",
+      "nodeGypDependencies": true
+    }
+  },
+  // AI CLIツールのインストール
+  // - Claude Code: ネイティブインストーラー使用（推奨方式、Node.js不要）
+  // - Gemini CLI/Codex CLI: npm経由
+  "postCreateCommand": "sudo chown -R appuser:appuser /home/appuser/.claude /home/appuser/.codex /home/appuser/.gemini 2>/dev/null || true && curl -fsSL https://claude.ai/install.sh | bash && echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.bashrc && npm install -g @google/gemini-cli@latest @openai/codex@latest",
+  "postStartCommand": "sudo mkdir -p $CLAUDE_CONFIG_DIR $CODEX_CONFIG_DIR $GEMINI_CONFIG_DIR && sudo chown -R appuser:appuser $CLAUDE_CONFIG_DIR $CODEX_CONFIG_DIR $GEMINI_CONFIG_DIR && sudo chmod 700 $CLAUDE_CONFIG_DIR $CODEX_CONFIG_DIR"
+}
